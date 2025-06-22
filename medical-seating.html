@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>医学会议在线选座系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f0f8ff, #e6f7ff);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #2c7da0;
+            position: relative;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo i {
+            font-size: 2.5rem;
+            color: #2c7da0;
+        }
+        
+        .logo h1 {
+            font-size: 2.2rem;
+            color: #2c7da0;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .logo span {
+            color: #4682B4;
+        }
+        
+        .search-container {
+            display: flex;
+            gap: 10px;
+            background: white;
+            border-radius: 50px;
+            padding: 10px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            width: 350px;
+            transition: all 0.3s;
+        }
+        
+        .search-container:focus-within {
+            box-shadow: 0 4px 15px rgba(44, 125, 160, 0.3);
+        }
+        
+        .search-container input {
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 1rem;
+            color: #555;
+        }
+        
+        .search-container button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #2c7da0;
+            font-size: 1.2rem;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .left-panel {
+            flex: 1;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .right-panel {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        .conference-hall {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .hall-title {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #2c7da0;
+            font-size: 1.8rem;
+        }
+        
+        .stage {
+            background: linear-gradient(to bottom, #4682B4, #2c7da0);
+            height: 80px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stage:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(to right, #ffd700, #ffa500, #ffd700);
+        }
+        
+        .seating-area {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        
+        .section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .section-title {
+            text-align: center;
+            padding: 8px;
+            background: #e6f7ff;
+            border-radius: 8px;
+            font-weight: bold;
+            color: #2c7da0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-controls {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .section-btn {
+            background: #2c7da0;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            display: none;
+        }
+        
+        .aisle {
+            width: 40px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #777;
+            font-weight: bold;
+            font-size: 0.9rem;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .rows {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .row {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .seat {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        
+        .available {
+            background: #e8f5e9;
+            border: 2px solid #66bb6a;
+            color: #2e7d32;
+        }
+        
+        .occupied {
+            background: #ffebee;
+            border: 2px solid #ef9a9a;
+            color: #c62828;
+        }
+        
+        .seat:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .seat-number {
+            font-weight: bold;
+            font-size: 0.7rem;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+        }
+        
+        .seat-name {
+            font-size: 0.75rem;
+            text-align: center;
+            padding: 0 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            margin-top: 8px;
+        }
+        
+        .search-results {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .results-title {
+            margin-bottom: 20px;
+            color: #2c7da0;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .result-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .result-item:hover {
+            background: #e6f7ff;
+        }
+        
+        .result-item h3 {
+            color: #2c7da0;
+            margin-bottom: 5px;
+        }
+        
+        .result-item p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .edit-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: none;
+            color: #4682B4;
+            cursor: pointer;
+            display: none;
+        }
+        
+        .result-item:hover .edit-btn {
+            display: block;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 500px;
+            max-width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+            animation: modalAppear 0.4s ease;
+        }
+        
+        @keyframes modalAppear {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .modal-header {
+            background: #2c7da0;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            font-size: 1.5rem;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+        
+        .close-modal:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .modal-body {
+            padding: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border 0.3s;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            border-color: #2c7da0;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(44, 125, 160, 0.2);
+        }
+        
+        .modal-footer {
+            padding: 20px;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #2c7da0;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .admin-controls {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+        
+        .admin-btn {
+            padding: 10px 20px;
+            background: #2c7da0;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+        
+        .admin-btn:hover {
+            background: #1a5d7a;
+            transform: translateY(-2px);
+        }
+        
+        .blink {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0% { box-shadow: 0 0 0 0 rgba(44, 125, 160, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(44, 125, 160, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(44, 125, 160, 0); }
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .available-color {
+            background: #e8f5e9;
+            border: 1px solid #66bb6a;
+        }
+        
+        .occupied-color {
+            background: #ffebee;
+            border: 1px solid #ef9a9a;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 0.9rem;
+            padding: 20px;
+        }
+        
+        .excel-import {
+            background: #e6f7ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 2px dashed #2c7da0;
+        }
+        
+        .excel-import h3 {
+            color: #2c7da0;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .import-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .import-controls input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .import-controls button {
+            padding: 10px 15px;
+            background: #2c7da0;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            background: #2c7da0;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateX(200%);
+            transition: transform 0.3s ease;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        @media (max-width: 1200px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .seating-area {
+                flex-direction: column;
+            }
+            
+            .section {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            
+            .aisle {
+                width: 100%;
+                height: 40px;
+                writing-mode: horizontal-tb;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .search-container {
+                width: 100%;
+            }
+            
+            .admin-controls {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-clinic-medical"></i>
+                <h1><span>医学会议</span>选座系统</h1>
+            </div>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="搜索人员姓名、职称、单位或座位号...">
+                <button id="searchBtn"><i class="fas fa-search"></i></button>
+            </div>
+        </header>
+        
+        <div class="admin-controls">
+            <button class="admin-btn" id="adminLoginBtn"><i class="fas fa-user-shield"></i> 管理员登录</button>
+            <button class="admin-btn" id="addAttendeeBtn" style="display:none;"><i class="fas fa-user-plus"></i> 添加参会者</button>
+            <button class="admin-btn" id="exportBtn" style="display:none;"><i class="fas fa-file-export"></i> 导出数据</button>
+        </div>
+        
+        <div class="main-content">
+            <div class="left-panel">
+                <h2 class="results-title"><i class="fas fa-search"></i> 搜索结果</h2>
+                <div id="searchResults">
+                    <div class="result-item">
+                        <h3>张明教授</h3>
+                        <p>座位：左区-A列-3排</p>
+                        <p>单位：北京协和医院</p>
+                    </div>
+                    <div class="result-item">
+                        <h3>李华主任</h3>
+                        <p>座位：中区-B列-2排</p>
+                        <p>单位：上海瑞金医院</p>
+                    </div>
+                </div>
+                
+                <div class="excel-import" id="excelImportSection" style="display:none;">
+                    <h3><i class="fas fa-file-excel"></i> Excel数据导入</h3>
+                    <div class="import-controls">
+                        <input type="file" id="excelFile" accept=".csv">
+                        <button id="importBtn"><i class="fas fa-upload"></i> 导入数据</button>
+                    </div>
+                    <p style="margin-top:10px; color:#666; font-size:0.9rem;">
+                        支持CSV格式文件，文件格式：姓名,职称,单位,区域,排数,列
+                    </p>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="conference-hall">
+                    <h2 class="hall-title">国际医学会议 - 主会场</h2>
+                    <div class="stage">主 席 台</div>
+                    
+                    <div class="seating-area">
+                        <div class="section">
+                            <div class="section-title">
+                                <span>左区 (共<span id="leftCount">30</span>座)</span>
+                                <div class="section-controls">
+                                    <button class="section-btn" data-section="left" data-action="add-row" title="增加一排">+</button>
+                                    <button class="section-btn" data-section="left" data-action="add-col" title="增加一列">+</button>
+                                </div>
+                            </div>
+                            <div class="rows" id="leftSection">
+                                <!-- Left section seats will be generated by JS -->
+                            </div>
+                        </div>
+                        
+                        <div class="aisle">过 道</div>
+                        
+                        <div class="section">
+                            <div class="section-title">
+                                <span>中区 (共<span id="centerCount">36</span>座)</span>
+                                <div class="section-controls">
+                                    <button class="section-btn" data-section="center" data-action="add-row" title="增加一排">+</button>
+                                    <button class="section-btn" data-section="center" data-action="add-col" title="增加一列">+</button>
+                                </div>
+                            </div>
+                            <div class="rows" id="centerSection">
+                                <!-- Center section seats will be generated by JS -->
+                            </div>
+                        </div>
+                        
+                        <div class="aisle">过 道</div>
+                        
+                        <div class="section">
+                            <div class="section-title">
+                                <span>右区 (共<span id="rightCount">30</span>座)</span>
+                                <div class="section-controls">
+                                    <button class="section-btn" data-section="right" data-action="add-row" title="增加一排">+</button>
+                                    <button class="section-btn" data-section="right" data-action="add-col" title="增加一列">+</button>
+                                </div>
+                            </div>
+                            <div class="rows" id="rightSection">
+                                <!-- Right section seats will be generated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="color-box available-color"></div>
+                            <span>空座位</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="color-box occupied-color"></div>
+                            <span>已占用</span>
+                        </div>
+                        <div class="legend-item">
+                            <div style="width:20px;height:20px;border-radius:50%;background:#2c7da0;animation:blink 1s infinite"></div>
+                            <span>搜索结果</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="search-results">
+                    <h2 class="results-title"><i class="fas fa-list"></i> 参会人员列表 (共<span id="attendeeCount">5</span>人)</h2>
+                    <div id="attendeeList">
+                        <!-- Attendee list will be generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 医学会议选座系统 | 技术支持：北京新炬火科技有限公司 | 当前版本: 4.0.1</p>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i> <span id="notificationText">操作成功</span>
+    </div>
+    
+    <!-- Modal for Admin Login -->
+    <div class="modal" id="adminLoginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-shield"></i> 管理员登录</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="adminUsername">用户名</label>
+                    <input type="text" id="adminUsername" placeholder="输入管理员用户名">
+                </div>
+                <div class="form-group">
+                    <label for="adminPassword">密码</label>
+                    <input type="password" id="adminPassword" placeholder="输入管理员密码">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary close-modal">取消</button>
+                <button class="btn btn-primary" id="loginBtn">登录</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for Add/Edit Attendee -->
+    <div class="modal" id="attendeeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle"><i class="fas fa-user-plus"></i> 添加参会者</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="attendeeName">姓名</label>
+                    <input type="text" id="attendeeName" placeholder="输入参会者姓名">
+                </div>
+                <div class="form-group">
+                    <label for="attendeeTitle">职称</label>
+                    <input type="text" id="attendeeTitle" placeholder="输入职称（如教授、主任）">
+                </div>
+                <div class="form-group">
+                    <label for="attendeeHospital">单位</label>
+                    <input type="text" id="attendeeHospital" placeholder="输入医院或机构名称">
+                </div>
+                <div class="form-group">
+                    <label for="attendeeSection">区域</label>
+                    <select id="attendeeSection">
+                        <option value="left">左区</option>
+                        <option value="center">中区</option>
+                        <option value="right">右区</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="attendeeRow">排数</label>
+                    <select id="attendeeRow">
+                        <!-- Rows will be generated dynamically -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="attendeeColumn">列</label>
+                    <select id="attendeeColumn">
+                        <!-- Columns will be generated dynamically -->
+                    </select>
+                </div>
+                <input type="hidden" id="editAttendeeId">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary close-modal">取消</button>
+                <button class="btn btn-danger" id="deleteAttendeeBtn" style="display:none;">删除参会者</button>
+                <button class="btn btn-primary" id="saveAttendeeBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始座位配置
+        const initialConfig = {
+            left: { rows: 10, cols: 3, columns: ['A', 'B', 'C'] },
+            center: { rows: 12, cols: 3, columns: ['A', 'B', 'C'] },
+            right: { rows: 10, cols: 3, columns: ['A', 'B', 'C'] }
+        };
+        
+        // 当前座位配置
+        let seatConfig = JSON.parse(JSON.stringify(initialConfig));
+        
+        // Sample data for attendees
+        let attendees = [
+            { id: 1, name: "张明", title: "教授", hospital: "北京协和医院", section: "left", row: 3, column: "A", seat: "左区-A列-3排" },
+            { id: 2, name: "李华", title: "主任", hospital: "上海瑞金医院", section: "center", row: 2, column: "B", seat: "中区-B列-2排" },
+            { id: 3, name: "王芳", title: "医生", hospital: "广州中山医院", section: "right", row: 1, column: "C", seat: "右区-C列-1排" },
+            { id: 4, name: "陈伟", title: "教授", hospital: "四川华西医院", section: "left", row: 1, column: "B", seat: "左区-B列-1排" },
+            { id: 5, name: "赵敏", title: "主任", hospital: "武汉同济医院", section: "center", row: 3, column: "C", seat: "中区-C列-3排" }
+        ];
+        
+        // DOM Elements
+        const adminLoginBtn = document.getElementById('adminLoginBtn');
+        const addAttendeeBtn = document.getElementById('addAttendeeBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const adminLoginModal = document.getElementById('adminLoginModal');
+        const attendeeModal = document.getElementById('attendeeModal');
+        const closeModalButtons = document.querySelectorAll('.close-modal');
+        const loginBtn = document.getElementById('loginBtn');
+        const saveAttendeeBtn = document.getElementById('saveAttendeeBtn');
+        const deleteAttendeeBtn = document.getElementById('deleteAttendeeBtn');
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const searchResults = document.getElementById('searchResults');
+        const excelImportSection = document.getElementById('excelImportSection');
+        const importBtn = document.getElementById('importBtn');
+        const excelFile = document.getElementById('excelFile');
+        const attendeeList = document.getElementById('attendeeList');
+        const attendeeCount = document.getElementById('attendeeCount');
+        const modalTitle = document.getElementById('modalTitle');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+        const leftCount = document.getElementById('leftCount');
+        const centerCount = document.getElementById('centerCount');
+        const rightCount = document.getElementById('rightCount');
+        const attendeeRowSelect = document.getElementById('attendeeRow');
+        const attendeeColumnSelect = document.getElementById('attendeeColumn');
+        
+        // Initialize seating chart
+        function initializeSeats() {
+            generateSectionSeats('left');
+            generateSectionSeats('center');
+            generateSectionSeats('right');
+            
+            // Update attendee list
+            updateAttendeeList();
+            
+            // Update seat counts
+            updateSeatCounts();
+        }
+        
+        function generateSectionSeats(section) {
+            const sectionElement = document.getElementById(section + 'Section');
+            sectionElement.innerHTML = '';
+            
+            const rows = seatConfig[section].rows;
+            const columns = seatConfig[section].columns;
+            
+            for (let row = 1; row <= rows; row++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row';
+                
+                for (const column of columns) {
+                    const seat = document.createElement('div');
+                    seat.className = 'seat';
+                    
+                    // Check if seat is occupied
+                    const attendee = attendees.find(a => 
+                        a.section === section && 
+                        a.row === row && 
+                        a.column === column
+                    );
+                    
+                    if (attendee) {
+                        seat.classList.add('occupied');
+                        seat.innerHTML = `
+                            <div class="seat-number">${column}${row}</div>
+                            <div class="seat-name">${attendee.name}${attendee.title}</div>
+                        `;
+                        seat.dataset.attendeeId = attendee.id;
+                    } else {
+                        seat.classList.add('available');
+                        seat.innerHTML = `
+                            <div class="seat-number">${column}${row}</div>
+                            <div class="seat-name">空座位</div>
+                        `;
+                    }
+                    
+                    seat.addEventListener('click', handleSeatClick);
+                    rowDiv.appendChild(seat);
+                }
+                
+                sectionElement.appendChild(rowDiv);
+            }
+        }
+        
+        // Update seat counts
+        function updateSeatCounts() {
+            leftCount.textContent = seatConfig.left.rows * seatConfig.left.columns.length;
+            centerCount.textContent = seatConfig.center.rows * seatConfig.center.columns.length;
+            rightCount.textContent = seatConfig.right.rows * seatConfig.right.columns.length;
+        }
+        
+        // Add a row to a section
+        function addRowToSection(section) {
+            if (seatConfig[section].rows < 15) {
+                seatConfig[section].rows++;
+                generateSectionSeats(section);
+                updateSeatCounts();
+                showNotification(`${section === 'left' ? '左区' : section === 'center' ? '中区' : '右区'}已增加一排座位`);
+            } else {
+                showNotification('已达到最大排数限制 (15排)');
+            }
+        }
+        
+        // Add a column to a section
+        function addColumnToSection(section) {
+            if (seatConfig[section].cols < 6) {
+                seatConfig[section].cols++;
+                const newColumn = String.fromCharCode(65 + seatConfig[section].cols - 1);
+                seatConfig[section].columns.push(newColumn);
+                generateSectionSeats(section);
+                updateSeatCounts();
+                showNotification(`${section === 'left' ? '左区' : section === 'center' ? '中区' : '右区'}已增加一列座位 (${newColumn}列)`);
+            } else {
+                showNotification('已达到最大列数限制 (6列)');
+            }
+        }
+        
+        // Update attendee list
+        function updateAttendeeList() {
+            let html = '';
+            attendees.forEach(attendee => {
+                html += `
+                    <div class="result-item" data-id="${attendee.id}">
+                        <h3>${attendee.name}${attendee.title}</h3>
+                        <p>座位：${attendee.seat} | 单位：${attendee.hospital}</p>
+                        <button class="edit-btn"><i class="fas fa-edit"></i></button>
+                    </div>
+                `;
+            });
+            
+            attendeeList.innerHTML = html;
+            attendeeCount.textContent = attendees.length;
+            
+            // Add click event to result items
+            document.querySelectorAll('#attendeeList .result-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    const attendee = attendees.find(a => a.id == id);
+                    if (attendee) {
+                        highlightAttendee(attendee);
+                    }
+                });
+            });
+            
+            // Add edit event to buttons
+            document.querySelectorAll('#attendeeList .edit-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const id = this.closest('.result-item').dataset.id;
+                    const attendee = attendees.find(a => a.id == id);
+                    if (attendee) {
+                        openEditModal(attendee);
+                    }
+                });
+            });
+        }
+        
+        // Handle seat click
+        function handleSeatClick(e) {
+            const seat = e.currentTarget;
+            const attendeeId = seat.dataset.attendeeId;
+            
+            if (attendeeId) {
+                // Find attendee and show details
+                const attendee = attendees.find(a => a.id == attendeeId);
+                if (attendee) {
+                    highlightAttendee(attendee);
+                }
+            } else if (addAttendeeBtn.style.display === 'block') {
+                // Admin can add new attendee to this seat
+                openAddModal(seat);
+            }
+        }
+        
+        // Highlight attendee
+        function highlightAttendee(attendee) {
+            // Highlight the seat
+            const seat = document.querySelector(`.seat[data-attendee-id="${attendee.id}"]`);
+            if (seat) {
+                document.querySelectorAll('.seat').forEach(s => {
+                    s.classList.remove('blink');
+                });
+                seat.classList.add('blink');
+                
+                setTimeout(() => {
+                    seat.classList.remove('blink');
+                }, 30000); // 30 seconds
+                
+                // Scroll to the seat
+                seat.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            // Show details
+            showNotification(`已定位到: ${attendee.name}${attendee.title} - ${attendee.seat}`);
+        }
+        
+        // Show notification
+        function showNotification(text) {
+            notificationText.textContent = text;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Open add modal
+        function openAddModal(seat) {
+            const section = seat.closest('.section').id.replace('Section', '');
+            const row = seat.closest('.row').rowIndex + 1;
+            const column = seat.querySelector('.seat-number').textContent[0];
+            
+            // Update row and column options
+            updateSeatOptions(section);
+            
+            document.getElementById('attendeeSection').value = section;
+            document.getElementById('attendeeRow').value = row;
+            document.getElementById('attendeeColumn').value = column;
+            
+            document.getElementById('attendeeName').value = '';
+            document.getElementById('attendeeTitle').value = '';
+            document.getElementById('attendeeHospital').value = '';
+            document.getElementById('editAttendeeId').value = '';
+            deleteAttendeeBtn.style.display = 'none';
+            
+            modalTitle.innerHTML = '<i class="fas fa-user-plus"></i> 添加参会者';
+            attendeeModal.style.display = 'flex';
+        }
+        
+        // Update seat options in modal
+        function updateSeatOptions(section) {
+            // Update row options
+            attendeeRowSelect.innerHTML = '';
+            const rows = seatConfig[section].rows;
+            
+            for (let i = 1; i <= rows; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `第${i}排`;
+                attendeeRowSelect.appendChild(option);
+            }
+            
+            // Update column options
+            attendeeColumnSelect.innerHTML = '';
+            const columns = seatConfig[section].columns;
+            
+            for (const column of columns) {
+                const option = document.createElement('option');
+                option.value = column;
+                option.textContent = `${column}列`;
+                attendeeColumnSelect.appendChild(option);
+            }
+        }
+        
+        // Open edit modal
+        function openEditModal(attendee) {
+            document.getElementById('attendeeName').value = attendee.name;
+            document.getElementById('attendeeTitle').value = attendee.title;
+            document.getElementById('attendeeHospital').value = attendee.hospital;
+            document.getElementById('attendeeSection').value = attendee.section;
+            
+            // Update row and column options
+            updateSeatOptions(attendee.section);
+            
+            document.getElementById('attendeeRow').value = attendee.row;
+            document.getElementById('attendeeColumn').value = attendee.column;
+            document.getElementById('editAttendeeId').value = attendee.id;
+            deleteAttendeeBtn.style.display = 'block';
+            
+            modalTitle.innerHTML = '<i class="fas fa-user-edit"></i> 编辑参会者';
+            attendeeModal.style.display = 'flex';
+        }
+        
+        // Delete attendee and shift others
+        function deleteAttendee(attendeeId) {
+            const attendee = attendees.find(a => a.id == attendeeId);
+            if (!attendee) return;
+            
+            const section = attendee.section;
+            const row = attendee.row;
+            const colIndex = seatConfig[section].columns.indexOf(attendee.column);
+            
+            // Remove the attendee
+            attendees = attendees.filter(a => a.id !== attendeeId);
+            
+            // Shift attendees in the same row to the left
+            for (let i = colIndex + 1; i < seatConfig[section].columns.length; i++) {
+                const column = seatConfig[section].columns[i];
+                const nextAttendee = attendees.find(a => 
+                    a.section === section && 
+                    a.row === row && 
+                    a.column === column
+                );
+                
+                if (nextAttendee) {
+                    // Move to previous column
+                    nextAttendee.column = seatConfig[section].columns[i-1];
+                    nextAttendee.seat = `${section === 'left' ? '左区' : section === 'center' ? '中区' : '右区'}-${nextAttendee.column}列-${row}排`;
+                }
+            }
+            
+            initializeSeats();
+            showNotification(`参会者 ${attendee.name}${attendee.title} 已删除，右侧人员已向左移位`);
+        }
+        
+        // Search functionality
+        function performSearch() {
+            const query = searchInput.value.toLowerCase().trim();
+            
+            if (!query) {
+                searchResults.innerHTML = '<p class="result-item">请输入搜索关键词</p>';
+                return;
+            }
+            
+            const results = attendees.filter(attendee => 
+                attendee.name.toLowerCase().includes(query) ||
+                attendee.title.toLowerCase().includes(query) ||
+                attendee.hospital.toLowerCase().includes(query) ||
+                attendee.seat.toLowerCase().includes(query)
+            );
+            
+            if (results.length === 0) {
+                searchResults.innerHTML = '<p class="result-item">没有找到匹配的结果</p>';
+                return;
+            }
+            
+            let html = '';
+            results.forEach(attendee => {
+                html += `
+                    <div class="result-item" data-id="${attendee.id}">
+                        <h3>${attendee.name}${attendee.title}</h3>
+                        <p>座位：${attendee.seat}</p>
+                        <p>单位：${attendee.hospital}</p>
+                    </div>
+                `;
+            });
+            
+            searchResults.innerHTML = html;
+            
+            // Add click event to result items
+            document.querySelectorAll('#searchResults .result-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    const attendee = attendees.find(a => a.id == id);
+                    if (attendee) {
+                        highlightAttendee(attendee);
+                    }
+                });
+            });
+        }
+        
+        // Admin login
+        function adminLogin() {
+            const username = document.getElementById('adminUsername').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            // Simple authentication
+            if (username === 'admin' && password === 'medical2023') {
+                addAttendeeBtn.style.display = 'block';
+                exportBtn.style.display = 'block';
+                excelImportSection.style.display = 'block';
+                
+                // Show section controls
+                document.querySelectorAll('.section-btn').forEach(btn => {
+                    btn.style.display = 'flex';
+                });
+                
+                adminLoginModal.style.display = 'none';
+                showNotification('管理员登录成功！');
+            } else {
+                showNotification('用户名或密码错误！');
+            }
+        }
+        
+        // Save attendee
+        function saveAttendee() {
+            const name = document.getElementById('attendeeName').value;
+            const title = document.getElementById('attendeeTitle').value;
+            const hospital = document.getElementById('attendeeHospital').value;
+            const section = document.getElementById('attendeeSection').value;
+            const row = parseInt(document.getElementById('attendeeRow').value);
+            const column = document.getElementById('attendeeColumn').value;
+            const editId = document.getElementById('editAttendeeId').value;
+            
+            if (!name || !title || !hospital) {
+                showNotification('请填写所有必填字段！');
+                return;
+            }
+            
+            // Generate seat string
+            const sectionName = 
+                section === 'left' ? '左区' : 
+                section === 'center' ? '中区' : '右区';
+            const seat = `${sectionName}-${column}列-${row}排`;
+            
+            if (editId) {
+                // Edit existing attendee
+                const index = attendees.findIndex(a => a.id == editId);
+                if (index !== -1) {
+                    attendees[index] = {
+                        ...attendees[index],
+                        name,
+                        title,
+                        hospital,
+                        section,
+                        row,
+                        column,
+                        seat
+                    };
+                    
+                    initializeSeats();
+                    attendeeModal.style.display = 'none';
+                    showNotification(`参会者 ${name}${title} 信息更新成功！`);
+                }
+            } else {
+                // Check if seat is already occupied
+                const seatOccupied = attendees.some(a => 
+                    a.section === section && 
+                    a.row === row && 
+                    a.column === column
+                );
+                
+                if (seatOccupied) {
+                    showNotification('该座位已被占用，请选择其他座位！');
+                    return;
+                }
+                
+                // Create new attendee
+                const newAttendee = {
+                    id: attendees.length > 0 ? Math.max(...attendees.map(a => a.id)) + 1 : 1,
+                    name,
+                    title,
+                    hospital,
+                    section,
+                    row,
+                    column,
+                    seat
+                };
+                
+                attendees.push(newAttendee);
+                initializeSeats();
+                attendeeModal.style.display = 'none';
+                showNotification(`参会者 ${name}${title} 添加成功！`);
+            }
+        }
+        
+        // Export data to CSV
+        function exportData() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "姓名,职称,单位,区域,排数,列,座位\n";
+            
+            attendees.forEach(attendee => {
+                const row = [
+                    attendee.name,
+                    attendee.title,
+                    attendee.hospital,
+                    attendee.section === 'left' ? '左区' : attendee.section === 'center' ? '中区' : '右区',
+                    attendee.row,
+                    attendee.column,
+                    attendee.seat
+                ].join(",");
+                csvContent += row + "\n";
+            });
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "医学会议座位数据.csv");
+            document.body.appendChild(link);
+            
+            link.click();
+            document.body.removeChild(link);
+            showNotification('数据导出成功！');
+        }
+        
+        // Import data from CSV
+        function importData() {
+            const file = excelFile.files[0];
+            if (!file) {
+                showNotification('请选择要导入的文件');
+                return;
+            }
+            
+            if (file.name.split('.').pop().toLowerCase() !== 'csv') {
+                showNotification('请上传CSV格式文件');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                const results = Papa.parse(content, {
+                    header: true,
+                    skipEmptyLines: true
+                });
+                
+                if (results.errors.length > 0) {
+                    showNotification('文件解析错误，请检查格式');
+                    return;
+                }
+                
+                const newAttendees = [];
+                results.data.forEach(row => {
+                    if (row.姓名 && row.职称 && row.单位 && row.区域 && row.排数 && row.列) {
+                        const section = 
+                            row.区域.includes('左') ? 'left' : 
+                            row.区域.includes('中') ? 'center' : 'right';
+                        
+                        const rowNum = parseInt(row.排数);
+                        
+                        if (!isNaN(rowNum)) {
+                            const sectionName = 
+                                section === 'left' ? '左区' : 
+                                section === 'center' ? '中区' : '右区';
+                            const seat = `${sectionName}-${row.列}列-${rowNum}排`;
+                            
+                            newAttendees.push({
+                                id: attendees.length + newAttendees.length + 1,
+                                name: row.姓名,
+                                title: row.职称,
+                                hospital: row.单位,
+                                section,
+                                row: rowNum,
+                                column: row.列,
+                                seat
+                            });
+                        }
+                    }
+                });
+                
+                if (newAttendees.length > 0) {
+                    attendees = [...attendees, ...newAttendees];
+                    initializeSeats();
+                    showNotification(`成功导入 ${newAttendees.length} 条数据！`);
+                } else {
+                    showNotification('没有找到有效数据');
+                }
+            };
+            
+            reader.readAsText(file, 'UTF-8');
+        }
+        
+        // Event Listeners
+        adminLoginBtn.addEventListener('click', () => {
+            adminLoginModal.style.display = 'flex';
+        });
+        
+        addAttendeeBtn.addEventListener('click', () => {
+            document.getElementById('editAttendeeId').value = '';
+            deleteAttendeeBtn.style.display = 'none';
+            modalTitle.innerHTML = '<i class="fas fa-user-plus"></i> 添加参会者';
+            document.getElementById('attendeeName').value = '';
+            document.getElementById('attendeeTitle').value = '';
+            document.getElementById('attendeeHospital').value = '';
+            attendeeModal.style.display = 'flex';
+        });
+        
+        exportBtn.addEventListener('click', exportData);
+        
+        importBtn.addEventListener('click', importData);
+        
+        closeModalButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                adminLoginModal.style.display = 'none';
+                attendeeModal.style.display = 'none';
+            });
+        });
+        
+        loginBtn.addEventListener('click', adminLogin);
+        
+        saveAttendeeBtn.addEventListener('click', saveAttendee);
+        
+        deleteAttendeeBtn.addEventListener('click', function() {
+            const attendeeId = document.getElementById('editAttendeeId').value;
+            if (attendeeId) {
+                if (confirm('确定要删除该参会者吗？')) {
+                    deleteAttendee(attendeeId);
+                    attendeeModal.style.display = 'none';
+                }
+            }
+        });
+        
+        searchBtn.addEventListener('click', performSearch);
+        
+        searchInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+        
+        // Section controls
+        document.querySelectorAll('.section-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const section = this.dataset.section;
+                const action = this.dataset.action;
+                
+                if (action === 'add-row') {
+                    addRowToSection(section);
+                } else if (action === 'add-col') {
+                    addColumnToSection(section);
+                }
+            });
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === adminLoginModal) {
+                adminLoginModal.style.display = 'none';
+            }
+            if (e.target === attendeeModal) {
+                attendeeModal.style.display = 'none';
+            }
+        });
+        
+        // Initialize the seating chart
+        initializeSeats();
+    </script>
+</body>
+</html>
